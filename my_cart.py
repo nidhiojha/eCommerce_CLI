@@ -40,6 +40,24 @@ def register_user():
     
     return jsonify({'status': True, 'message': "successfully register"})
 
+#login user
+@app.route('/login', methods=['POST'])
+def login_user():
+    credentials = request.get_json(force=True)
+    try:
+        if credentials['username'] and credentials['password']:
+            valid_credentials = pbkdf2_sha256.verify(credentials['password'],
+                                                     Users.objects(username=credentials['username']).first().password)
+        else:
+            valid_credentials = False
+    except:
+        valid_credentials = False
+
+    if valid_credentials:
+        session['username'] = credentials['username']
+
+    return jsonify({'status': valid_credentials})
+
 
 
 if __name__ == "__main__":
