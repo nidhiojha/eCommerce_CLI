@@ -43,6 +43,7 @@ def register_user():
 #login user
 @app.route('/login', methods=['POST'])
 def login_user():
+	# {"username":"nidhi_user","password":"nidhi"} 
     credentials = request.get_json(force=True)
     try:
         if credentials['username'] and credentials['password']:
@@ -57,6 +58,12 @@ def login_user():
         session['username'] = credentials['username']
 
     return jsonify({'status': valid_credentials})
+
+#logout user
+@app.route('/logout')
+def logout_user():
+    session.clear()
+    return jsonify({'status': 'Logout Successfully'})
 
 
 
