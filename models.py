@@ -9,8 +9,9 @@ class Users(Document):
     is_user = BooleanField(default=False)
 
 class Products(Document):
-	product_id = StringField(required= True, unique=True)
-	title = StringField(required=True)
-	description = StringField()
-	price = FloatField(required=True)
-	user_id = StringField(required=True)
+    product_id = StringField(required= True, unique=True)
+    title = StringField(required=True)
+    description = StringField()
+    price = FloatField(required=True)
+    quantity = StringField(required=True)
+    admin_id = StringField(required=True)

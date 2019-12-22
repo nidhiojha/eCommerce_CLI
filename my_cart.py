@@ -66,6 +66,29 @@ def logout_user():
     return jsonify({'status': 'Logout Successfully'})
 
 
+#ADD The Product only if Admin in DataBase
+@app.route('/addProduct', methods=['POST'])
+def add_product():
+    # {"title" : "sports", "description" : "batting","quantity": 2, "price" : 5000, "user_id" : "8881ebf2-aec5-4dd5-997d-082d9cb50bdc"} 
+    if 'username' not in session:
+        return jsonify({'status':False, 'message':'Login Required'})
+    
+    prod_data = request.get_json(force=True)
+    user_db = users_collection.find({})
+
+    for document in user_db:
+        if document["is_admin"] :
+            product_id = str(uuid.uuid4())
+            title = prod_data['title']
+            description = prod_data['description']
+            price = prod_data['price']
+            quantity = int(prod_data['quantity'])
+            admin_id = prod_data['admin_id']
+            product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
+             "quantity": quantity, "admin_id":str(admin_id)})
+            return jsonify({'status':True, 'message':'Item Added Successfully.'})
+        elif document["is_user"]:
+            return jsonify({'status':False, 'message':'Operation not permitted'})
 
 if __name__ == "__main__":
     app.run(host ="0.0.0.0", debug = True)
