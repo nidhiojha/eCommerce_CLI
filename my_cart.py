@@ -11,7 +11,9 @@ app = Flask(__name__)
 
 connection = MongoClient() 
 database = connection["eCommerce"]     #database name. 
+
 users_collection = database["users"]  
+cart_collection = database["user_cart"]
 products_collection = database["products"]        # collection name.
 
 app.secret_key = str(uuid.uuid4())
@@ -24,7 +26,7 @@ connect(
 #register the user
 @app.route('/register', methods=['POST'])
 def register_user():
-	# {"username":"nidhi_user", "email":"nidhi_user@gmail.com", "password":"nidhi", "is_admin":false, "is_user":true} 
+    # {"username":"nidhi_user", "email":"nidhi_user@gmail.com", "password":"nidhi", "is_admin":false, "is_user":true} 
     user_data = request.get_json(force=True)
     username = user_data['username']
     email = user_data['email']
@@ -43,7 +45,7 @@ def register_user():
 #login user
 @app.route('/login', methods=['POST'])
 def login_user():
-	# {"username":"nidhi_user","password":"nidhi"} 
+    # {"username":"nidhi_user","password":"nidhi"} 
     credentials = request.get_json(force=True)
     try:
         if credentials['username'] and credentials['password']:
@@ -75,8 +77,7 @@ def add_product():
     
     prod_data = request.get_json(force=True)
     user_db = users_collection.find({})
-    print(prod_data['user_id'])
-
+   
     for document in user_db:
         product_id = str(uuid.uuid4())
         title = prod_data['title']
@@ -84,12 +85,12 @@ def add_product():
         price = prod_data['price']
         quantity = int(prod_data['quantity'])
         user_id = prod_data['user_id']
-    if prod_data['user_id'] == document['user_id']:
-        product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
+        if prod_data['user_id'] == document['user_id'] and document['is_admin']:
+            product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
            "quantity": quantity, "user_id":str(user_id)})
-        return jsonify({'status':True, 'message':'Item Added Successfully.'})
-    else:
-        return jsonify({'status':False, 'message':'Operation Not Permitted'})
+            return jsonify({'status':True, 'message':'Item Added Successfully.'})
+        elif  prod_data['user_id'] == document['user_id'] and document['is_user']:
+            return jsonify({'status':False, 'message':'Operation Not Permitted'})
         
 
 # Delete The Product
@@ -119,7 +120,7 @@ def delete_product():
                 else:
                     return jsonify({'status':False, 'message':'No Matching Product Found To Delete'})
 
-            elif user_document["is_user"]:
+            elif user_document["is_user"] :
                 product = products_collection.find_one({'product_id': prod_data['product_id']})
                 
                 if product :
@@ -130,6 +131,7 @@ def delete_product():
                         return jsonify({'status':False, 'message': 'You Are Not Authorised To Delete This Item'})
                 else:
                     return jsonify({'status':False, 'message':'No Matching Product Found To Delete'})
+
 
 
 #Search The product by ID for all
@@ -172,5 +174,79 @@ def search_items_by_parameters():
     else:
         return jsonify({'status':False, 'message':'The Item Is Not Available.'})
 
+
+@app.route('/addCart', methods=['POST'])
+def add_cart():
+    # {"title":"sports", "description":"batting", "user_id":"5e0ac3f2-dd16-4c53-a6ee-f15a4a92dd96","quantity": 2 }
+    if 'username' not in session:
+        return jsonify({'status':False, 'message':'Login Required'})
+
+    prod_data = request.get_json(force=True)
+
+    user_db = users_collection.find({})
+    prod_db = products_collection.find({})
+    cart_db = cart_collection.find({})
+
+    if not prod_data['quantity']:
+        return jsonify({'status':False, 'message':'Your Cart Running Out of Quanity'})
+
+    sum_of_cart = 0
+    for product_document in prod_db:
+        for user_document in user_db:
+            
+            if user_document["is_admin"] and user_document["user_id"] == prod_data["user_id"]:
+                return jsonify({'status':False})
+
+            elif user_document["is_user"] and user_document["user_id"] == prod_data["user_id"]:
+                product_id = str(uuid.uuid4())
+                title = prod_data['title']
+                description = prod_data['description']
+                seller_id = prod_data['user_id']
+                quantity = int(prod_data['quantity'])
+                max_quantity = product_document['quantity']
+
+                if quantity > max_quantity:
+                    return jsonify({'status':False, 'message':'Quanity Exceeding Max Amount Of Product'})
+                else:
+                    sum_of_cart += quantity*product_document['price']
+                    if sum_of_cart > 5000:
+                        total_payble_amount = sum_of_cart - (.1*sum_of_cart)
+                    else:
+                        total_payble_amount = sum_of_cart
+
+                product = cart_collection.insert_one({"product_id":product_id, "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
+                 "total_payble_amount": total_payble_amount, "quantity": quantity, "user_id":prod_data["user_id"]})
+                return jsonify({'status':True, 'message':'Item Added Successfully to Cart.'})
+            else:
+                return jsonify({'status':False, 'message':'Please Authorise Yourself'})
+                
+# Remove Item From Cart By User           
+@app.route('/removeCart', methods=['DELETE'])
+def remove_cart():
+   # {"product_id":"e4ea97df-498f-4dc7-9a1d-5394dfc75db0", "user_id":"5e0ac3f2-dd16-4c53-a6ee-f15a4a92dd96"}
+    if 'username' not in session:
+        return jsonify({'status':False, 'message':'Login Required'})
+
+    cart_db = cart_collection.find({})
+    user_db = users_collection.find({})
+
+    prod_data = request.get_json(force=True)
+   
+    
+    for user_document in user_db:
+        for prod_document in cart_db:
+            product_id_fetch = cart_collection.find_one({'product_id': prod_data['product_id']})
+            user_id_fetch = cart_collection.find_one({"user_id": prod_data['user_id']})
+
+            if product_id_fetch and user_id_fetch and user_id_fetch["user_id"] == prod_data["user_id"]:
+                cart_collection.remove( {"product_id":prod_data['product_id']});
+                return jsonify({'status':True, 'message':'Product Deleted'})
+
+            elif not product_id_fetch:
+                return jsonify({'status':False, 'message': 'No Such Item'})
+
+            elif not user_id_fetch:
+                return jsonify({'status':False, 'message': 'You Are Not Permitted To Remove Cart Item'})
+            
 if __name__ == "__main__":
     app.run(host ="0.0.0.0", debug = True)

@@ -14,4 +14,4 @@ class Products(Document):
     description = StringField()
     price = FloatField(required=True)
     quantity = StringField(required=True)
-    admin_id = StringField(required=True)
+    user_id = StringField(required=True)
