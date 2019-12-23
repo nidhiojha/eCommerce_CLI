@@ -15,3 +15,12 @@ class Products(Document):
     price = FloatField(required=True)
     quantity = StringField(required=True)
     user_id = StringField(required=True)
+
+class Cart(Document):
+    product_id = StringField(required= True, unique=True)
+    title = StringField(required=True)
+    description = StringField()
+    sum_of_cart = FloatField(required=True)
+    total_payble_amount = FloatField(required=True)
+    quantity = StringField(required=True)
+    user_id = StringField(required=True)
