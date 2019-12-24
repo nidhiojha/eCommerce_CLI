@@ -27,19 +27,13 @@ For search(READ) items based on 'title', login not required <br />
 
 *USER LEVEL OPERATIONS* <br >
 A) User can Register  <br />
-
 B) For cart operation (viz product adding to cart or removing products from cart) only authorised user can perform.<br>
-
 C)User can by add multiple product from the cart as well as can view the coupens available per product and can apply to it but only one at a time and can get discount based on final billing stage.<br/>
-
 D)Login checked in this stage as well.<br />
 
 *ADMIN LEVEL OPERATIONS* <br >
 A) Admin can Register  <br />
-
 B) For add(CREATE)New Product, only Admin allowed, login checked in prelim stage. <br />
-
 C)Admin have permission to add coupens per product as well as can modify the accessbility of the coupens per product.<br/>
-
-D) For remove (DELETE) items, only Admin who added the item previously is allowed to delete, login checked in this stage as       well <br />
+D) For remove (DELETE) items, only Admin who added the item previously is allowed to delete, login checked in this stage as well <br />
 
