@@ -88,7 +88,7 @@
 
 **Response Param** <br />
 { <br />
-  "message": "Item Added Successfully To Cart", <br />
+  "message": "Item Added Successfully To Cart. Coupen Already Applied", <br />
   "status": true <br />
 } <br />
 
@@ -108,32 +108,53 @@
  
 **searchProductByParameters** <br />
 
-**END POINT** : localhost:5000/searchProductByParameters?title=sports <br />
-OR <br />
-**END POINT** : localhost:5000/searchProductByParameters?description=batting <br />
+**END POINT** : localhost:5000/searchProductByParameters <br />
 
 **Request Body**<br />
-{"title":"sports"}  <br />
-OR <br />
-{"description":"batting"} <br />
+{"description":"bats"}  <br />
 
-**Response**
+**Response**[<br />
+{ [<br />
+  "products": [<br />
+    { [<br />
+      "description": "bats",[<br />
+      "discount": 10,[<br />
+      "price": 6000,[<br />
+      "quantity": 20,[<br />
+      "title": "batting"[<br />
+    },[<br />
+    { [<br />
+      "description": "bats",[<br />
+      "discount": 10,[<br />
+      "price": 6000,[<br />
+      "quantity": 20,[<br />
+      "title": "bawls"[<br />
+    } [<br />
+  ],[<br />
+  "status": true[<br />
+} [<br />
+
+
+**METHOD** : GET <br />
+
+***Type*** <br />
+ 
+**checkout** <br />
+
+**END POINT** : localhost:5000/checkout <br />
+
+**Request Body**<br />
+{"username":nidhi_user }  <br />
+
+**Response**[<br />
 {
-  "products": [ <br />
-    { <br />
-      "_id": { <br />
-        "$oid": "5916b4cc1d41c813b1781c1a" <br />
-      }, <br />
-      "description": "batting", <br />
-      "price": 5000, <br />
-      "product_id": "fb98e6b4-b2cc-414b-92f5-9264ef0a14d4", <br />
-      "user_id": "0a8aee78-2e9d-491c-8af1-1390ef50586a", <br />
-      "title": "sports" <br />
-    } <br />
-  ], <br />
-  "status": true <br />
-} <br />
-
+  "BILL_GENERATED": {
+    "actual_amount": 36000,
+    "discounted_amount": 500,
+    "final_amount": 35500
+  },
+  "status": true
+}
 
 
 ### DELETE_END_POINT: <br />
