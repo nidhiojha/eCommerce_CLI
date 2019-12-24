@@ -28,7 +28,7 @@ connect(
 #Register User/Admin
 @app.route("/register", methods=["POST"])
 def register_user():
-    # {"username":"nidhi_user", "email":"nidhi_user@gmail.com", "password":"nidhi", "is_admin":false, "is_user":true} 
+    # {"username":"nidhi_user", "email":"nidhi_user@gmail.com", "password":"nidhi", "is_admin":false, "is_user":true,} 
     user_data = request.get_json(force=True)
     username = user_data["username"]
     email = user_data["email"]
@@ -40,7 +40,7 @@ def register_user():
         is_admin = user_data["is_admin"]
     if "is_user" in user_data:
         is_user = user_data["is_user"]
-    user = users_collection.insert_one({"username":username, "email":email, "user_id":str(user_id), "password":str(password), "is_admin":bool(is_admin), "is_user":bool(is_user)})
+    user = users_collection.insert_one({"coupen":0,"username":username, "email":email, "user_id":str(user_id), "password":str(password), "is_admin":bool(is_admin), "is_user":bool(is_user)})
     
     return jsonify({"status": True, "message": "Successfully Register"})
 
@@ -71,7 +71,7 @@ def logout_user():
 #ADD The Product Only By Admin
 @app.route("/addProduct", methods=["POST"])
 def add_product():
-    # {"title" : "sports", "description" : "batting","quantity": 2, "price" : 5000, "user_id" : "8881ebf2-aec5-4dd5-997d-082d9cb50bdc"} 
+    # {"title" : "batting", "description" : "bats", "price" : 6000, "quantity": 20, "is_coupen": true, "discount":10, "coupen_type":1} 
     if "username" not in session:
         return jsonify({"status":False, "message":"Login Required"})
     
@@ -93,10 +93,10 @@ def add_product():
 
             if is_coupen == True:
                 add_date = datetime.strptime(str(datetime.now()), '%Y-%m-%d %H:%M:%S.%f')
-                validity_of_coupon = datetime.now() + timedelta(days=30)
+                validity_of_coupon = datetime.now() + timedelta(days=30)          
 
                 product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
-                "quantity": quantity, "user_id":str(user_id),"coupen_date_added": add_date, "validity_of_coupon": validity_of_coupon, "discount":int(discount),
+                "is_coupen":is_coupen,"coupen_type":coupen_type, "quantity": quantity, "user_id":str(user_id),"coupen_date_added": add_date, "validity_of_coupon": validity_of_coupon, "discount":int(discount),
                 })
 
                 return jsonify({"status":True, "message":"Item Added Successfully With Coupen"})
@@ -161,51 +161,70 @@ def search_items_by_parameters():
 # Add Items To Cart By User  
 @app.route("/addCart", methods=["POST"])
 def add_cart():
-    # {"title":"sports", "description":"batting","quantity": 2 }
+    # {"title":"sports", "description":"batting","quantity": 2, "is_coupen":true}
     if "username" not in session:
         return jsonify({"status":False, "message":"Login Required"})
 
-    prod_data = request.get_json(force=True)
+    cart_data = request.get_json(force=True)
     user_db = users_collection.find({})
     prod_db = products_collection.find({})
     sum_of_cart = 0
     
-    if not prod_data["quantity"]:
+    if not cart_data["quantity"]:
         return jsonify({"status":False, "message":"Your Cart Running Out of Quanity"})
-   
-    for product_document in prod_db:
-        for user_document in user_db:
-            user_details_fetch = users_collection.find_one({"username": session["username"]})
 
-            if not user_details_fetch["is_user"]:
-                return jsonify({"status":False, "message":"You Are Not Eligible To Add Item"})
+    if products_collection.count({"title":cart_data["title"]})==0:
+        return jsonify({"status":False, "message":"No Such Product Available"})
 
-            elif user_details_fetch["is_user"] :
-                product_id = prod_data["product_id"]
-                title = prod_data["title"]
-                description = prod_data["description"]
-                user_id = user_details_fetch["user_id"]
-                quantity = int(prod_data["quantity"])
-                max_quantity = product_document["quantity"]
+    else:
+        user_details_fetch = users_collection.find_one({"username": session["username"]})
+        product_details_fetch = products_collection.find_one({"title":cart_data["title"]})
 
-                if quantity > max_quantity:
-                    return jsonify({"status":False, "message":"Quanity Exceeding Max Amount Of Available Product"})
+        for product_document in prod_db:
+            for user_document in user_db:
 
-                else:
-                    sum_of_cart += quantity*product_document["price"]
+                if not user_details_fetch["is_user"]:
+                    return jsonify({"status":False, "message":"You Are Not Eligible To Add Item"})
+
+                elif user_details_fetch["is_user"] :
+                    product_id = product_details_fetch["product_id"]
+                    title = cart_data["title"]
+                    description = cart_data["description"]
+                    user_id = user_details_fetch["user_id"]
+                    quantity = int(cart_data["quantity"])
+                    max_quantity = product_document["quantity"]
+                    is_coupen = product_document["is_coupen"]
+
+                    if quantity > max_quantity:
+                        return jsonify({"status":False, "message":"Quanity Exceeding Max Amount Of Available Product"})
+
+                    else:
+                        sum_of_cart += quantity*product_document["price"]
+                    
+                    product_details_fetch = products_collection.find_one({"product_id": product_id})
+
+                    if product_details_fetch and is_coupen==True and user_details_fetch["coupen"] == 0:        
+                        product = cart_collection.insert_one({"product_id":product_details_fetch["product_id"], "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
+                            "quantity": quantity, "user_id":user_details_fetch["user_id"], "is_coupen":True})
+
+                        users_collection.update_one({"user_id":user_details_fetch["user_id"]},{"$set":{"coupen":product_details_fetch["discount"]}})
+                        return jsonify({"status":True, "message":"Item Added Successfully To Cart."})
+
+                    elif product_details_fetch and is_coupen==True and user_details_fetch["coupen"] != 0:
+                        product = cart_collection.insert_one({"product_id":product_details_fetch["product_id"], "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
+                            "quantity": quantity, "user_id":user_details_fetch["user_id"], "is_coupen":False})
+                        return jsonify({"status":True, "message":"Item Added Successfully To Cart. Coupen Already Applied"})
+
+                    elif product_details_fetch and is_coupen==False:        
+                        product = cart_collection.insert_one({"product_id":product_details_fetch["product_id"], "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
+                            "quantity": quantity, "user_id":user_details_fetch["user_id"], "is_coupen":is_coupen})
+                        return jsonify({"status":True, "message":"Item Added Successfully To Cart."})
+                    
+                    else:
+                        return jsonify({"status":False, "message":"Please Select Valid Product From Available Options"})
                 
-                product_details_fetch = products_collection.find_one({"product_id": product_id})
-
-                if product_details_fetch:        
-                    product = cart_collection.insert_one({"product_id":product_details_fetch["product_id"], "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
-                        "quantity": quantity, "user_id":user_details_fetch["user_id"]})
-                    return jsonify({"status":True, "message":"Item Added Successfully To Cart."})
-                
                 else:
-                    return jsonify({"status":False, "message":"Please Select Valid Product From Available Options"})
-            
-            else:
-                return jsonify({"status":False, "message":"Please Authorise Yourself"})
+                    return jsonify({"status":False, "message":"Please Authorise Yourself"})
 
 # Remove Items From Cart By User           
 @app.route("/removeCart", methods=["DELETE"])
@@ -216,16 +235,16 @@ def remove_cart():
 
     cart_db = cart_collection.find({})
     user_db = users_collection.find({})
-    prod_data = request.get_json(force=True)   
+    cart_data = request.get_json(force=True)   
     
     for user_document in user_db:
         for prod_document in cart_db:
             user_details_fetch = users_collection.find_one({"username": session["username"]})
-            product_id_fetch = cart_collection.find_one({"product_id": prod_data["product_id"]})
+            product_id_fetch = cart_collection.find_one({"product_id": cart_data["product_id"]})
             user_id_fetch = cart_collection.find_one({"user_id": user_details_fetch["user_id"]})
 
             if product_id_fetch and user_id_fetch:
-                cart_collection.remove( {"product_id":prod_data["product_id"]});
+                cart_collection.remove( {"product_id":cart_data["product_id"]});
                 return jsonify({"status":True, "message":"Product Deleted Successfully"})
 
             elif not product_id_fetch:
@@ -234,7 +253,47 @@ def remove_cart():
             elif not user_id_fetch:
                 return jsonify({"status":False, "message": "You Are Not Permitted To Remove Cart Item"})
 
+# Checkout Final Cart Items  
+@app.route("/checkout", methods=["GET"])
+def checkout():
+    # {"username":nidhi_user }
+    if "username" not in session:
+        return jsonify({"status":False, "message":"Login Required"})
 
-            
+    sum_of_cart = 0
+    quantity = 0
+    discounted_amount = 0
+    actual_amount = 0
+
+    user_details_fetch = users_collection.find_one({"username": session["username"]})
+    coupen = user_details_fetch['coupen']
+    
+    cart_details_fetch = cart_collection.find({"user_id": user_details_fetch["user_id"]})
+    
+    for cart_document in cart_details_fetch:
+        sum_of_cart += cart_document["sum_of_cart"]
+        product_details_fetch = products_collection.find_one({"product_id": cart_document["product_id"]})
+        quantity = product_details_fetch["quantity"] - cart_document["quantity"]
+        products_collection.update_one({"product_id":cart_document["product_id"]},{"$set":{"quantity":quantity}})
+
+    actual_amount = sum_of_cart
+    if sum_of_cart > 10000 and  cart_document["is_coupen"] == False :
+        discounted_amount = 500
+
+    elif sum_of_cart > 10000 and  cart_document["is_coupen"] == True :
+        discounted_amount = (coupen*sum_of_cart)/100
+
+    elif sum_of_cart <= 10000:
+        discounted_amount = (coupen*sum_of_cart)/100
+
+    final_amount = sum_of_cart - discounted_amount
+    bill_description = ({"actual_amount":actual_amount, "discounted_amount":discounted_amount, "final_amount": final_amount})
+
+    cart_collection.delete_many({"user_id":user_details_fetch["user_id"]})
+
+    users_collection.update_one({"user_id":user_details_fetch["user_id"]},{"$set":{"coupen":0}})
+
+    return jsonify({"status":True, "BILL_GENERATED":bill_description})
+
 if __name__ == "__main__":
     app.run(host ="0.0.0.0", debug = True)
