@@ -69,6 +69,37 @@
 } <br />
 
 
+**METHOD** : POST <br />
+
+**END POINT** : localhost:5000/addCart <br />
+
+**Request body** <br />
+{ <br />
+  "title" : "string", <br />
+  "description" :"string", <br />
+  "quantity" : "integer", <br />
+} <br />
+
+
+**If USER Then Pick User Name From Session** <br />
+
+**Sample request** <br />
+{"title" : "sports", "description" : "batting","quantity": 2}  <br />
+
+**Response Param** <br />
+{ <br />
+  "message": "Item Added Successfully To Cart", <br />
+  "status": true <br />
+} <br />
+
+*IF NOT AUTHORISED USER* <br />
+
+**response**
+{ <br />
+  "message": "Please Authorise Yourself", <br />
+  "status": false <br />
+} <br 
+
 ### READ_END_POINT: <br />
 
 **METHOD** : GET <br />
@@ -145,3 +176,44 @@ OR <br />
 { <br />
   "status": true <br />
 } <br />
+
+
+**METHOD** : DELETE <br />
+
+**END POINT** : localhost:5000/removeCart <br />
+
+**Request body** <br />
+{ <br />
+  "product_id" : "string" <br />
+}  <br />
+
+**Sample Request**
+{"product_id":"7cb5b3df-b5de-4dc1-9b81-d56c5d7415ab"} <br />
+
+*IF USER:* <br />
+
+**Sample Request**
+{"product_id":"fb98e6b4-b2cc-414b-92f5-9264ef0a14d4"} <br />
+
+**response**
+{ <br />
+  "message": "Product Deleted Successfully", <br />
+  "status": true <br />
+} <br />
+
+*IF USER WITH INVALID CREATION:* <br />
+
+**response**
+{ <br />
+  "message": "You Are Not Permitted To Remove Cart Item", <br />
+  "status": false <br />
+} <br />
+
+*IF PRODUCT ID DOES NOT EXISTS IN CART DATABASE:* <br />
+
+**response**
+{ <br />
+  "message": "No Such Item", <br />
+  "status": false <br />
+} <br />
+
