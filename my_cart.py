@@ -5,6 +5,7 @@ from models import Users, Products
 from pymongo import MongoClient
 import uuid
 import json
+from datetime import datetime, timedelta
 
 #Instance Of App
 app = Flask(__name__)
@@ -14,7 +15,8 @@ database = connection["eCommerce"]     #database name.
 
 users_collection = database["users"]  
 cart_collection = database["user_cart"]     # collection name.
-products_collection = database["products"]        
+products_collection = database["products"] 
+coupens_collection = database["coupens"]       
 
 app.secret_key = str(uuid.uuid4())
 
@@ -49,8 +51,7 @@ def login_user():
     credentials = request.get_json(force=True)
     try:
         if credentials["username"] and credentials["password"]:
-            valid_credentials = pbkdf2_sha256.verify(credentials["password"],
-                                                     Users.objects(username=credentials["username"]).first().password)
+            valid_credentials = pbkdf2_sha256.verify(credentials["password"], Users.objects(username=credentials["username"]).first().password)
         else:
             valid_credentials = False
     except:
@@ -59,7 +60,6 @@ def login_user():
     if valid_credentials:
         session["username"] = credentials["username"]
 
-
     return jsonify({"status": valid_credentials})
 
 #logout user
@@ -67,7 +67,6 @@ def login_user():
 def logout_user():
     session.clear()
     return jsonify({"status": "Logout Successfully"})
-
 
 #ADD The Product Only By Admin
 @app.route("/addProduct", methods=["POST"])
@@ -81,20 +80,34 @@ def add_product():
     
     for document in user_db:
         user_details_fetch = users_collection.find_one({"username": session["username"]})
-
         if user_details_fetch["is_admin"]:
             product_id = str(uuid.uuid4())
             title = prod_data["title"]
             description = prod_data["description"]
             price = prod_data["price"]
             quantity = int(prod_data["quantity"])
-            user_id = session["user_id"]
-            product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
-            "quantity": quantity, "user_id":str(user_id)})
-            return jsonify({"status":True, "message":"Item Added Successfully."})
+            user_id = user_details_fetch["user_id"]
+            is_coupen = prod_data["is_coupen"]
+            discount = prod_data["discount"]
+            coupen_type = prod_data["coupen_type"]
+
+            if is_coupen == True:
+                add_date = datetime.strptime(str(datetime.now()), '%Y-%m-%d %H:%M:%S.%f')
+                validity_of_coupon = datetime.now() + timedelta(days=30)
+
+                product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
+                "quantity": quantity, "user_id":str(user_id),"coupen_date_added": add_date, "validity_of_coupon": validity_of_coupon, "discount":int(discount),
+                })
+
+                return jsonify({"status":True, "message":"Item Added Successfully With Coupen"})
+
+            else:
+                product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
+                "quantity": quantity, "user_id":str(user_id)})
+                return jsonify({"status":True, "message":"Item Added Successfully Without Coupen"})
+        
         elif user_details_fetch["is_user"] :
-            return jsonify({"status":False, "message":"Operation Not Permitted"})
-            
+            return jsonify({"status":False, "message":"Operation Not Permitted"})            
 
 # Delete The Product Only By Admin
 @app.route("/deleteProduct", methods=["DELETE"])
@@ -105,13 +118,13 @@ def delete_product():
 
     prod_db = products_collection.find({})
     user_db = users_collection.find({})
-
     prod_data = request.get_json(force=True)
     
     for user_document in user_db:
         user_details_fetch = users_collection.find_one({"username": session["username"]})
         if user_details_fetch["is_admin"] :
             product_id_fetch = products_collection.find_one({"product_id": prod_data["product_id"]})
+            
             if product_id_fetch:
                 products_collection.remove( {"product_id":prod_data["product_id"]});
                 return jsonify({"status":True, "message":"Product Deleted"})
@@ -120,9 +133,7 @@ def delete_product():
                 return jsonify({"status":False, "message": "No Such Item"})
 
         elif user_details_fetch["is_user"] :
-                return jsonify({"status":False, "message": "You Are Not Permitted To Remove Product Item"})
-            
-    
+               return jsonify({"status":False, "message": "You Are Not Permitted To Remove Product Item"})            
 
 #READ The Product By Title Or Description Or Price For All
 @app.route("/searchProductByParameters")
@@ -163,7 +174,6 @@ def add_cart():
         return jsonify({"status":False, "message":"Your Cart Running Out of Quanity"})
    
     for product_document in prod_db:
-
         for user_document in user_db:
             user_details_fetch = users_collection.find_one({"username": session["username"]})
 
@@ -171,7 +181,7 @@ def add_cart():
                 return jsonify({"status":False, "message":"You Are Not Eligible To Add Item"})
 
             elif user_details_fetch["is_user"] :
-                product_id = str(uuid.uuid4())
+                product_id = prod_data["product_id"]
                 title = prod_data["title"]
                 description = prod_data["description"]
                 user_id = user_details_fetch["user_id"]
@@ -179,16 +189,21 @@ def add_cart():
                 max_quantity = product_document["quantity"]
 
                 if quantity > max_quantity:
-                    return jsonify({"status":False, "message":"Quanity Exceeding Max Amount Of Product"})
+                    return jsonify({"status":False, "message":"Quanity Exceeding Max Amount Of Available Product"})
+
                 else:
                     sum_of_cart += quantity*product_document["price"]
-                    if sum_of_cart > 5000:
-                        total_payble_amount = sum_of_cart - (.1*sum_of_cart)
-                    else:
-                        total_payble_amount = sum_of_cart
-                product = cart_collection.insert_one({"product_id":product_id, "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
-                 "total_payble_amount": total_payble_amount, "quantity": quantity, "user_id":user_details_fetch["user_id"]})
-                return jsonify({"status":True, "message":"Item Added Successfully To Cart."})
+                
+                product_details_fetch = products_collection.find_one({"product_id": product_id})
+
+                if product_details_fetch:        
+                    product = cart_collection.insert_one({"product_id":product_details_fetch["product_id"], "title":title, "description":description, "sum_of_cart":int(sum_of_cart),
+                        "quantity": quantity, "user_id":user_details_fetch["user_id"]})
+                    return jsonify({"status":True, "message":"Item Added Successfully To Cart."})
+                
+                else:
+                    return jsonify({"status":False, "message":"Please Select Valid Product From Available Options"})
+            
             else:
                 return jsonify({"status":False, "message":"Please Authorise Yourself"})
 
@@ -206,7 +221,6 @@ def remove_cart():
     for user_document in user_db:
         for prod_document in cart_db:
             user_details_fetch = users_collection.find_one({"username": session["username"]})
-
             product_id_fetch = cart_collection.find_one({"product_id": prod_data["product_id"]})
             user_id_fetch = cart_collection.find_one({"user_id": user_details_fetch["user_id"]})
 
@@ -219,6 +233,8 @@ def remove_cart():
 
             elif not user_id_fetch:
                 return jsonify({"status":False, "message": "You Are Not Permitted To Remove Cart Item"})
+
+
             
 if __name__ == "__main__":
     app.run(host ="0.0.0.0", debug = True)
