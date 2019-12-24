@@ -98,7 +98,6 @@ def add_product():
                 product = products_collection.insert_one({"product_id":product_id, "title":title, "description":description, "price":int(price),
                 "is_coupen":is_coupen,"coupen_type":coupen_type, "quantity": quantity, "user_id":str(user_id),"coupen_date_added": add_date, "validity_of_coupon": validity_of_coupon, "discount":int(discount),
                 })
-
                 return jsonify({"status":True, "message":"Item Added Successfully With Coupen"})
 
             else:
@@ -135,26 +134,21 @@ def delete_product():
         elif user_details_fetch["is_user"] :
                return jsonify({"status":False, "message": "You Are Not Permitted To Remove Product Item"})            
 
-#READ The Product By Title Or Description Or Price For All
+#READ The Product By Description For All
 @app.route("/searchProductByParameters")
 def search_items_by_parameters():
-    # {"title":"sports"}
+    # {"description":"bats"}
     prod_data =request.get_json(force=True)
-    search_filter = {}
+    product_db = products_collection.find({"description":prod_data["description"]})
 
-    if "title" in prod_data:
-        search_filter["title"] = request.args.get("title")
-
-    if "description" in prod_data:
-        search_filter["description"] = request.args.get("description")
-
-    product = products_collection.find_one(search_filter)
-    product_description = {}
-    if (product):
-        product_description = ({"product_id":product["product_id"], "title":product["title"], "description":product["description"], "price":product["price"],
-             "user_id":str(product["user_id"])})
-        return jsonify({"status": True, "products":product_description})
-        
+    count_product_db = products_collection.count({"description":prod_data["description"]})
+    resulting_search_list = []
+    if count_product_db != 0:
+        for product in product_db:
+            product_description = ({"title":product["title"], "description":product["description"], "price":product["price"],"quantity":product["quantity"], "discount":product["discount"]})
+            resulting_search_list.append(product_description)
+        return jsonify({"status": True, "products":resulting_search_list})
+            
     else:
         return jsonify({"status":False, "message":"The Item Is Not Available."})
 
@@ -222,7 +216,7 @@ def add_cart():
                     
                     else:
                         return jsonify({"status":False, "message":"Please Select Valid Product From Available Options"})
-                
+
                 else:
                     return jsonify({"status":False, "message":"Please Authorise Yourself"})
 
