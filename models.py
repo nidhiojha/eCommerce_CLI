@@ -10,17 +10,19 @@ class Users(Document):
 
 class Products(Document):
     product_id = StringField(required= True, unique=True)
-    title = StringField(required=True)
+    title = StringField(required=True,)
     description = StringField()
     price = FloatField(required=True)
     quantity = StringField(required=True)
     user_id = StringField(required=True)
+    is_coupen = BooleanField(default=False)
+    discount = BooleanField(default=True)
+    coupen_type = FloatField(required=True)
 
 class Cart(Document):
     product_id = StringField(required= True, unique=True)
     title = StringField(required=True)
-    description = StringField()
+    description = StringField(required=True)
     sum_of_cart = FloatField(required=True)
-    total_payble_amount = FloatField(required=True)
     quantity = StringField(required=True)
     user_id = StringField(required=True)
