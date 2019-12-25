@@ -27,7 +27,7 @@ For search(READ) items based on 'description', login not required <br />
 *USER LEVEL OPERATIONS* <br >
 A) User can Register  <br />
 B) For cart operation (viz product adding to cart or removing products from cart) only authorised user can perform.<br>
-C)User can by add multiple product from the cart as well as can view the coupens available at any time and can apply to it but only one at a time and can get discount based on final billing stage.Login checked in this stage as well.<br/>
+C)User can by add multiple product from the cart as well as can view the coupens available at any point of time and can apply to it but it can access only one time and can get discount based on final billing stage.Login checked in this stage as well.<br/>
 D)Bill generated after checkout from cart including discounts and after applying coupen<br />
 
 *ADMIN LEVEL OPERATIONS* <br >
