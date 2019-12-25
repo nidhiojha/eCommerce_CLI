@@ -1,33 +1,31 @@
-from mongoengine import Document, StringField, EmailField, FloatField, BooleanField
+from mongoengine import Document, StringField, EmailField, FloatField, BooleanField, IntField
 
 class Users(Document):
-    username = StringField(required=True, unique=True)
     user_id = StringField(required=True, unique=True)
+    username = StringField(required=True, unique=True)
     email = EmailField(required=True, unique=True)
     password = StringField(required=True)
     is_admin = BooleanField(default=False)
     is_user = BooleanField(default=False)
-    coupen = FloatField(required=False)
 
 class Products(Document):
     product_id = StringField(required= True, unique=True)
-    title = StringField(required=True,unique=True)
-    description = StringField(required=True)
+    category = StringField(required=True,unique=True)
+    product_name = StringField(required=True, unique=True)
+    product_details = StringField(required=True)
     price = FloatField(required=True)
-    quantity = StringField(required=True)
+    quantity = IntField(required=True)
     user_id = StringField(required=True)
-    is_coupen = BooleanField(default=False)
-    discount = FloatField(default=True)
-    coupen_type = FloatField(required=True)
-
+    
 class Cart(Document):
     product_id = StringField(required= True, unique=True)
-    title = StringField(required=True)
-    description = StringField(required=True)
+    category = StringField(required=True,unique=True)
+    product_name = StringField(required=True, unique=True)
+    product_details = StringField(required=True)
     sum_of_cart = FloatField(required=True)
-    quantity = StringField(required=True)
+    quantity = IntField(required=True)
     user_id = StringField(required=True)
-
+    
 class Coupens(Document):
     coupen_name = StringField(required=True, unique=True)
     coupen_id = StringField(required= True, unique=True)
@@ -37,5 +35,4 @@ class Coupens(Document):
     discount = FloatField(required=True)
     coupen_status = BooleanField(default=False)
     last_use = StringField(required=True)
-
 
