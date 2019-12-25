@@ -7,16 +7,17 @@ class Users(Document):
     password = StringField(required=True)
     is_admin = BooleanField(default=False)
     is_user = BooleanField(default=False)
+    coupen = FloatField(required=False)
 
 class Products(Document):
     product_id = StringField(required= True, unique=True)
-    title = StringField(required=True,)
-    description = StringField()
+    title = StringField(required=True,unique=True)
+    description = StringField(required=True)
     price = FloatField(required=True)
     quantity = StringField(required=True)
     user_id = StringField(required=True)
     is_coupen = BooleanField(default=False)
-    discount = BooleanField(default=True)
+    discount = FloatField(default=True)
     coupen_type = FloatField(required=True)
 
 class Cart(Document):
@@ -26,3 +27,4 @@ class Cart(Document):
     sum_of_cart = FloatField(required=True)
     quantity = StringField(required=True)
     user_id = StringField(required=True)
+
