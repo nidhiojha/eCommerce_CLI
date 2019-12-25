@@ -9,7 +9,6 @@ This CLI Application contains CRUD items with Cart addition and deletion capabil
 
 *FOR DETAILS (params) REFER [API DOCS](https://github.com/nidhiojha/eCommerce_CLI/blob/cli_application/API_DOCS.md)* <br />
 
-*FOR all test cases REFER [Test Cases](https://github.com/nidhiojha/eCommerce_CLI/blob/cli_application/test_cases.py)* <br />
 
 ### Mongo DB installation <br />
 sudo apt-get install mongodb <br />
@@ -28,7 +27,7 @@ For search(READ) items based on 'description', login not required <br />
 *USER LEVEL OPERATIONS* <br >
 A) User can Register  <br />
 B) For cart operation (viz product adding to cart or removing products from cart) only authorised user can perform.<br>
-C)User can by add multiple product from the cart as well as can view the coupens available per product and can apply to it but only one at a time and can get discount based on final billing stage.Login checked in this stage as well.<br/>
+C)User can by add multiple product from the cart as well as can view the coupens available at any time and can apply to it but only one at a time and can get discount based on final billing stage.Login checked in this stage as well.<br/>
 D)Bill generated after checkout from cart including discounts and after applying coupen<br />
 
 *ADMIN LEVEL OPERATIONS* <br >
