@@ -28,3 +28,14 @@ class Cart(Document):
     quantity = StringField(required=True)
     user_id = StringField(required=True)
 
+class Coupens(Document):
+    coupen_name = StringField(required=True, unique=True)
+    coupen_id = StringField(required= True, unique=True)
+    times_of_use = IntField(required=True)
+    start_date = StringField(required= True)
+    end_date = StringField(required= True)
+    discount = FloatField(required=True)
+    coupen_status = BooleanField(default=False)
+    last_use = StringField(required=True)
+
+
