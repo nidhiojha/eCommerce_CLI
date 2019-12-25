@@ -287,7 +287,7 @@ def remove_cart():
 # Checkout Final Cart Items  
 @app.route("/checkout", methods=["GET"])
 def checkout():
-    # {"username":nidhi_user , "coupen_name":"USE10"}
+    # {"coupen_name":"USE10"}
     if "username" not in session:
         return jsonify({"status":False, "message":"Login Required"})
 
